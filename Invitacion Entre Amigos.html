@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Cata de vinos · Entre amigos vinoteca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<script src="assets/image-slot.js"></script>
+<style>
+  :root{
+    --bg:#160a0e;
+    --bg2:#0c0608;
+    --wine:#7a1f2b;
+    --wine-deep:#3e0c14;
+    --gold:#c8a45a;
+    --gold-bright:#e6ca7f;
+    --cream:#f1e7d6;
+    --muted:#b09a86;
+    --muted-dim:#7d6c5f;
+    --red:#b0232f;
+    --hair:rgba(200,164,90,0.22);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg2);
+    color:var(--cream);
+    font-family:'Jost',sans-serif;
+    font-weight:300;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* fixed atmospheric background */
+  #bg{
+    position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background:
+      radial-gradient(120% 70% at 50% -10%, #2a0f17 0%, rgba(42,15,23,0) 55%),
+      radial-gradient(90% 60% at 85% 105%, #25101a 0%, rgba(37,16,26,0) 60%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg2) 70%, #080405 100%);
+  }
+  #grain{
+    position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- shared layout ---------- */
+  .wrap{ max-width:600px; margin:0 auto; padding:0 28px; position:relative; }
+  section{ position:relative; }
+  .kicker{
+    font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.42em;
+    text-transform:uppercase; color:var(--gold); display:inline-block;
+  }
+  .kicker.dim{ color:var(--muted-dim); }
+  h1,h2,h3{ font-family:'Cormorant Garamond',serif; font-weight:500; line-height:1.02; }
+  .serif-it{ font-style:italic; }
+  .lead{ color:var(--muted); font-size:17px; max-width:34ch; }
+
+  /* hairline divider with diamond */
+  .rule{ display:flex; align-items:center; gap:14px; justify-content:center; margin:0 auto; width:min(220px,60%); }
+  .rule::before,.rule::after{ content:""; height:1px; flex:1; background:var(--hair); }
+  .rule i{ width:6px; height:6px; background:var(--gold); transform:rotate(45deg); display:block; flex:none; }
+
+  /* reveal-on-scroll */
+  .reveal{ opacity:0; transform:translateY(28px); transition:opacity 1s cubic-bezier(.2,.7,.2,1), transform 1s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in{ opacity:1; transform:none; }
+  .d1{transition-delay:.12s}.d2{transition-delay:.24s}.d3{transition-delay:.36s}.d4{transition-delay:.48s}
+
+  /* ---------- music toggle ---------- */
+  #music{
+    position:fixed; top:18px; left:18px; z-index:50;
+    display:flex; align-items:center; gap:9px;
+    height:38px; padding:0 14px 0 12px;
+    background:rgba(20,8,12,.55); border:1px solid var(--hair); border-radius:999px;
+    color:var(--cream); cursor:pointer; -webkit-tap-highlight-color:transparent;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    font-family:'Space Mono',monospace; font-size:9.5px; letter-spacing:.22em; text-transform:uppercase;
+    opacity:0; animation:fadeDown 1.3s 1.5s cubic-bezier(.2,.7,.2,1) forwards;
+    transition:border-color .3s, background .3s;
+  }
+  #music:hover{ border-color:rgba(200,164,90,.5); }
+  #music .eq{ display:flex; align-items:flex-end; gap:2.5px; height:15px; }
+  #music .eq b{ width:2.5px; height:5px; background:var(--gold); border-radius:2px; display:block; transform-origin:bottom; }
+  #music.playing .eq b{ animation:eq .9s ease-in-out infinite; }
+  #music.playing .eq b:nth-child(2){ animation-delay:.25s; }
+  #music.playing .eq b:nth-child(3){ animation-delay:.5s; }
+  #music.playing .eq b:nth-child(4){ animation-delay:.15s; }
+  #music .lab-on{ display:none; } #music .lab-off{ display:inline; }
+  #music.playing .lab-on{ display:inline; } #music.playing .lab-off{ display:none; }
+  @keyframes eq{ 0%,100%{ height:4px } 50%{ height:15px } }
+  /* gentle pulse to invite the first tap */
+  #music.hint{ animation:fadeDown 1.3s 1.5s forwards, hintPulse 2.4s 3s ease-in-out infinite; }
+  @keyframes hintPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(200,164,90,0) } 50%{ box-shadow:0 0 0 5px rgba(200,164,90,.10) } }
+
+  /* ---------- the wine glass (scroll-fill) ---------- */
+  #glass{
+    position:fixed; top:16px; right:16px; width:72px; height:128px;
+    z-index:30; pointer-events:none; transform-origin:center center;
+    filter:drop-shadow(0 0 14px rgba(122,31,43,0.0));
+    will-change:transform,filter;
+  }
+  #glass svg{ width:100%; height:100%; overflow:visible; }
+  .glass-stroke{ fill:none; stroke:var(--gold); stroke-width:2.2; stroke-linecap:round; }
+  .glass-stroke.thin{ stroke-width:1.6; opacity:.8; }
+
+  /* ---------- HERO ---------- */
+  #hero{ min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:30px 0 34px; text-align:center; }
+  #hero .logo{ width:144px; opacity:0; animation:fadeDown 1.3s .2s cubic-bezier(.2,.7,.2,1) forwards; }
+  #hero .center{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; position:relative; z-index:40; padding:0 24px; }
+  #hero .center::before{ content:""; position:absolute; inset:-14% -10%; z-index:-1; background:radial-gradient(58% 46% at 50% 52%, rgba(8,4,5,.82) 0%, rgba(8,4,5,.55) 45%, rgba(8,4,5,0) 78%); pointer-events:none; }
+  #hero .eyebrow{ opacity:0; animation:fadeUp 1.2s .5s cubic-bezier(.2,.7,.2,1) forwards; }
+  #hero h1{
+    font-size:clamp(48px,15vw,76px); color:var(--cream);
+    text-shadow:0 8px 40px rgba(0,0,0,.75), 0 2px 8px rgba(0,0,0,.6);
+    opacity:0; animation:fadeUp 1.2s .7s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  #hero h1 em{ color:var(--gold-bright); }
+  #hero .sub{ font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.3em; text-transform:uppercase; color:var(--cream); text-shadow:0 2px 12px rgba(0,0,0,.85); opacity:0; animation:fadeUp 1.2s .9s forwards; }
+  #hero .datechip{
+    font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.34em; color:var(--gold);
+    border:1px solid var(--hair); border-radius:999px; padding:9px 18px;
+    opacity:0; animation:fadeUp 1.2s 1.05s forwards;
+  }
+  .scrollcue{ display:flex; flex-direction:column; align-items:center; gap:10px; color:var(--muted-dim); z-index:40; opacity:0; animation:fadeUp 1.2s 1.3s forwards; }
+  .scrollcue span{ font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.3em; text-transform:uppercase; }
+  .scrollcue .arrow{ width:1px; height:34px; background:linear-gradient(var(--gold),transparent); position:relative; }
+  .scrollcue .arrow::after{ content:""; position:absolute; bottom:0; left:-3px; width:7px; height:7px; border-right:1px solid var(--gold); border-bottom:1px solid var(--gold); transform:rotate(45deg); animation:bob 1.8s ease-in-out infinite; }
+
+  @keyframes fadeUp{ from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:none} }
+  @keyframes fadeDown{ from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:none} }
+  @keyframes bob{ 0%,100%{transform:rotate(45deg) translate(0,0);opacity:.4} 50%{transform:rotate(45deg) translate(2px,2px);opacity:1} }
+
+  /* ---------- generic section ---------- */
+  .block{ padding:108px 0; }
+  .block.tight{ padding:74px 0; }
+  .stack{ display:flex; flex-direction:column; gap:22px; }
+  h2.big{ font-size:clamp(38px,10vw,58px); color:var(--cream); }
+  h2.big em{ color:var(--gold-bright); }
+
+  /* intro pull-quote */
+  #intro .quote{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:clamp(26px,7vw,38px); line-height:1.32; color:var(--cream); }
+  #intro .quote b{ font-style:normal; font-weight:500; color:var(--gold-bright); }
+
+  /* image slot styling */
+  image-slot{ display:block; width:100%; border:1px solid var(--hair); background:#1c0e13; }
+  .slot-cap{ font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted-dim); margin-top:10px; }
+
+  /* event */
+  #evento .frame{ position:relative; }
+  #evento .tag{ position:absolute; top:16px; left:16px; z-index:2; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:var(--cream); background:rgba(20,8,12,.7); padding:7px 12px; border:1px solid var(--hair); backdrop-filter:blur(4px); }
+
+  /* countdown */
+  #cuenta{ text-align:center; }
+  .count{ display:flex; gap:14px; justify-content:center; margin-top:6px; }
+  .count .unit{ display:flex; flex-direction:column; align-items:center; gap:8px; min-width:64px; }
+  .count .num{ font-family:'Cormorant Garamond',serif; font-size:clamp(46px,13vw,64px); font-weight:500; color:var(--gold-bright); line-height:1; font-variant-numeric:tabular-nums; }
+  .count .lab{ font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted-dim); }
+  .count .sep{ font-family:'Cormorant Garamond',serif; font-size:clamp(40px,12vw,58px); color:var(--hair); line-height:1; align-self:flex-start; }
+
+  /* incluye */
+  .gift{ display:flex; flex-direction:column; gap:30px; }
+  .gift .item{ display:grid; grid-template-columns:54px 1fr; gap:22px; align-items:start; }
+  .gift .no{ font-family:'Cormorant Garamond',serif; font-size:40px; color:var(--gold); line-height:1; border-top:1px solid var(--hair); padding-top:10px; }
+  .gift h3{ font-size:30px; color:var(--cream); margin-bottom:4px; }
+  .gift p{ color:var(--muted); font-size:15.5px; }
+  .gift .badge{ display:inline-block; margin-top:10px; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); border:1px solid var(--hair); padding:4px 10px; border-radius:999px; }
+
+  /* detalles */
+  .details{ border-top:1px solid var(--hair); }
+  .details .row{ display:flex; justify-content:space-between; align-items:baseline; gap:18px; padding:20px 2px; border-bottom:1px solid var(--hair); }
+  .details .k{ font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--muted-dim); flex:none; }
+  .details .v{ font-family:'Cormorant Garamond',serif; font-size:24px; color:var(--cream); text-align:right; }
+  .details .v small{ display:block; font-family:'Jost',sans-serif; font-size:12.5px; color:var(--muted); letter-spacing:0; margin-top:3px; }
+  .tbd{ color:var(--gold-bright)!important; font-style:italic; border-bottom:1px dashed var(--hair); }
+
+  /* rsvp */
+  #rsvp{ text-align:center; }
+  .cta{
+    display:inline-flex; align-items:center; gap:12px; margin-top:10px;
+    font-family:'Jost',sans-serif; font-weight:400; font-size:16px; letter-spacing:.02em;
+    color:#1a0a0e; background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+    padding:17px 34px; border-radius:999px; text-decoration:none;
+    box-shadow:0 12px 34px rgba(200,164,90,.22); transition:transform .25s, box-shadow .25s;
+  }
+  .cta:hover{ transform:translateY(-2px); box-shadow:0 18px 42px rgba(200,164,90,.3); }
+  .cta svg{ width:19px; height:19px; }
+  .ghost{ display:inline-flex; align-items:center; gap:8px; margin-top:20px; color:var(--muted); text-decoration:none; font-size:13px; letter-spacing:.04em; border-bottom:1px solid transparent; transition:color .2s,border-color .2s; }
+  .ghost:hover{ color:var(--gold); border-color:var(--hair); }
+  .wa-num{ font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.12em; color:var(--muted-dim); margin-top:16px; }
+
+  /* closing */
+  #brindis{ text-align:center; padding:120px 0 130px; }
+  #brindis .logo{ width:160px; opacity:.96; }
+  #brindis .salud{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:clamp(40px,12vw,62px); color:var(--gold-bright); }
+  #brindis .foot{ font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--muted-dim); }
+
+  @media (min-width:620px){
+    .wrap{ padding:0 40px; }
+    .gift .item{ grid-template-columns:64px 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div id="grain"></div>
+
+<!-- ===== background music ===== -->
+<audio id="audio" loop preload="auto" src="assets/ambiente.mp3?v=1"></audio>
+<button id="music" class="hint" type="button" aria-label="Activar o silenciar música">
+  <span class="eq"><b></b><b></b><b></b><b></b></span>
+  <span class="lab-off">Música</span>
+  <span class="lab-on">Sonando</span>
+</button>
+
+<!-- ===== scroll-filling wine glass ===== -->
+<div id="glass" aria-hidden="true">
+  <svg viewBox="0 0 120 200" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <linearGradient id="wineGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9a2c3a"/>
+        <stop offset=".5" stop-color="#6e1b28"/>
+        <stop offset="1" stop-color="#360a12"/>
+      </linearGradient>
+      <clipPath id="bowlClip">
+        <path d="M28,15 C26,62 40,99 60,99 C80,99 94,62 92,15 Z"/>
+      </clipPath>
+    </defs>
+    <!-- wine -->
+    <g clip-path="url(#bowlClip)">
+      <rect id="wineRect" x="0" y="99" width="120" height="120" fill="url(#wineGrad)"/>
+      <ellipse id="wineTop" cx="60" cy="99" rx="0" ry="3.4" fill="#b3414f" opacity="0"/>
+    </g>
+    <!-- glass outline -->
+    <ellipse class="glass-stroke" cx="60" cy="15" rx="32" ry="6.4"/>
+    <path class="glass-stroke" d="M28,15 C26,62 40,99 60,99 C80,99 94,62 92,15"/>
+    <line class="glass-stroke" x1="60" y1="99" x2="60" y2="166"/>
+    <path class="glass-stroke thin" d="M36,170 C36,162 84,162 84,170"/>
+    <ellipse class="glass-stroke thin" cx="60" cy="171" rx="24" ry="4.4"/>
+  </svg>
+</div>
+
+<!-- ===== HERO ===== -->
+<section id="hero">
+  <img class="logo" src="assets/logo-entreamigos-cream.png" alt="Entre amigos vinoteca" />
+  <div class="center">
+    <span class="kicker eyebrow">Vinoteca · Invitación</span>
+    <h1>Una noche<br><em>entre amigos</em></h1>
+    <p class="sub">Cata de vinos · Bodega López</p>
+    <div class="datechip">13 · JUNIO · 2026</div>
+  </div>
+  <div class="scrollcue">
+    <span>Deslizá para servir la copa</span>
+    <div class="arrow"></div>
+  </div>
+</section>
+
+<!-- ===== INTRO ===== -->
+<section id="intro" class="block">
+  <div class="wrap stack">
+    <span class="kicker dim reveal">El gesto</span>
+    <p class="quote reveal d1">Creemos que el vino se entiende mejor <b>compartido.</b> Por eso abrimos nuestras puertas para una noche distinta: descorchar, conversar y descubrir.</p>
+    <div class="reveal d2" style="margin-top:8px"><span class="kicker">— Entre amigos vinoteca</span></div>
+  </div>
+</section>
+
+<!-- ===== EVENTO ===== -->
+<section id="evento" class="block tight">
+  <div class="wrap stack">
+    <span class="kicker reveal">La cata</span>
+    <h2 class="big reveal d1">Una bodega<br><em>de culto:</em> López</h2>
+    <p class="lead reveal d2">Recorremos copa a copa una selección de etiquetas de Bodega López, una de las casas más queridas de Mendoza. Servidas, comentadas y disfrutadas sin apuro.</p>
+    <div class="frame reveal d3" style="margin-top:14px">
+      <span class="tag">Bodega López · Mendoza</span>
+      <image-slot id="evento-foto" style="height:340px" shape="rect" fit="cover" placeholder="Soltá una foto de las botellas / la cata"></image-slot>
+      <div class="slot-cap">Opcional — arrastrá una foto para reemplazar el placeholder</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== COUNTDOWN ===== -->
+<section id="cuenta" class="block">
+  <div class="wrap stack" style="align-items:center">
+    <span class="kicker dim reveal">Faltan</span>
+    <div class="count reveal d1" id="countdown">
+      <div class="unit"><span class="num" data-d>00</span><span class="lab">días</span></div>
+      <span class="sep">:</span>
+      <div class="unit"><span class="num" data-h>00</span><span class="lab">horas</span></div>
+      <span class="sep">:</span>
+      <div class="unit"><span class="num" data-m>00</span><span class="lab">min</span></div>
+      <span class="sep">:</span>
+      <div class="unit"><span class="num" data-s>00</span><span class="lab">seg</span></div>
+    </div>
+    <div class="reveal d2" style="margin-top:10px"><div class="rule"><i></i></div></div>
+    <p class="reveal d3" style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:24px;color:var(--muted)">Sábado 13 de junio, 2026</p>
+  </div>
+</section>
+
+<!-- ===== INCLUYE ===== -->
+<section id="incluye" class="block tight">
+  <div class="wrap stack">
+    <span class="kicker reveal">Tu entrada incluye</span>
+    <h2 class="big reveal d1">Te lo llevás<br><em>de regalo</em></h2>
+    <div class="gift" style="margin-top:18px">
+      <div class="item reveal d2">
+        <div class="no">01</div>
+        <div>
+          <h3>Una copa de la casa</h3>
+          <p>La copa con la que vas a catar es tuya. Te la llevás a casa para seguir brindando.</p>
+          <span class="badge">De regalo</span>
+        </div>
+      </div>
+      <div class="item reveal d3">
+        <div class="no">02</div>
+        <div>
+          <h3>Una tabla para compartir</h3>
+          <p>Quesos y fiambres seleccionados para acompañar cada vino, pensada para compartir entre amigos.</p>
+          <span class="badge">Incluida</span>
+        </div>
+      </div>
+    </div>
+    <div class="reveal d4" style="margin-top:34px">
+      <image-slot id="incluye-foto" style="height:300px" shape="rect" fit="cover" placeholder="Soltá una foto de la copa + tabla"></image-slot>
+      <div class="slot-cap">Opcional — foto de la copa de la casa y la tabla</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DETALLES ===== -->
+<section id="detalles" class="block">
+  <div class="wrap stack">
+    <span class="kicker reveal">Los detalles</span>
+    <h2 class="big reveal d1">Anotá<br><em>la fecha</em></h2>
+    <div class="details reveal d2" style="margin-top:16px">
+      <div class="row"><span class="k">Fecha</span><span class="v">Sábado 13 de junio<small>2026</small></span></div>
+      <div class="row"><span class="k">Hora</span><span class="v"><span class="tbd">A confirmar</span><small>Pronto te avisamos</small></span></div>
+      <div class="row"><span class="k">Lugar</span><span class="v"><span class="tbd">A confirmar</span><small>Entre amigos vinoteca</small></span></div>
+      <div class="row"><span class="k">Valor</span><span class="v"><span class="tbd">$ a confirmar</span><small>Incluye copa de la casa + tabla</small></span></div>
+      <div class="row"><span class="k">Cupos</span><span class="v">Limitados<small>Reservá con anticipación</small></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== RSVP ===== -->
+<section id="rsvp" class="block">
+  <div class="wrap stack" style="align-items:center">
+    <span class="kicker reveal">Te esperamos</span>
+    <h2 class="big reveal d1" style="text-align:center">Reservá<br><em>tu lugar</em></h2>
+    <p class="lead reveal d2" style="text-align:center;max-width:30ch">Confirmá tu asistencia por WhatsApp. Los cupos son limitados, así que no lo dejes pasar.</p>
+    <a class="cta reveal d3" id="waBtn" href="https://wa.me/5493772521783?text=%C2%A1Hola!%20Quiero%20reservar%20mi%20lugar%20para%20la%20cata%20de%20Bodega%20L%C3%B3pez%20del%2013%20de%20junio%20%F0%9F%8D%B7" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.715zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+      Reservar por WhatsApp
+    </a>
+    <a class="ghost reveal d3" id="calBtn" href="#" target="_blank" rel="noopener">＋ Agregar al calendario</a>
+    <div class="wa-num reveal d3">+54 9 3772 52-1783</div>
+  </div>
+</section>
+
+<!-- ===== BRINDIS ===== -->
+<section id="brindis">
+  <div class="wrap stack" style="align-items:center;gap:30px">
+    <div class="rule reveal"><i></i></div>
+    <img class="logo reveal d1" src="assets/logo-entreamigos-cream.png" alt="Entre amigos vinoteca" />
+    <p class="salud reveal d2">¡Salud!</p>
+    <p class="reveal d3" style="color:var(--muted);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px">Nos vemos para brindar, entre amigos.</p>
+    <p class="foot reveal d3">Entre amigos · Vinoteca</p>
+  </div>
+</section>
+
+<script>
+(function(){
+  /* ---------- countdown ---------- */
+  var target = new Date('2026-06-13T20:00:00-03:00').getTime();
+  var cd = document.getElementById('countdown');
+  var elD = cd.querySelector('[data-d]'), elH = cd.querySelector('[data-h]'),
+      elM = cd.querySelector('[data-m]'), elS = cd.querySelector('[data-s]');
+  function pad(n){ return (n<10?'0':'')+n; }
+  function tick(){
+    var diff = target - Date.now();
+    if(diff < 0) diff = 0;
+    var d = Math.floor(diff/86400000);
+    var h = Math.floor(diff%86400000/3600000);
+    var m = Math.floor(diff%3600000/60000);
+    var s = Math.floor(diff%60000/1000);
+    elD.textContent = pad(d); elH.textContent = pad(h); elM.textContent = pad(m); elS.textContent = pad(s);
+  }
+  tick(); setInterval(tick, 1000);
+
+  /* ---------- google calendar link ---------- */
+  var cal = document.getElementById('calBtn');
+  var params = new URLSearchParams({
+    action:'TEMPLATE',
+    text:'Cata de vinos · Bodega López — Entre amigos vinoteca',
+    dates:'20260613T230000Z/20260614T020000Z',
+    details:'Cata de vinos de Bodega López en Entre amigos vinoteca. Incluye copa de la casa + tabla. Reservas por WhatsApp: +54 9 3772 52-1783',
+    location:'Entre amigos vinoteca'
+  });
+  cal.href = 'https://calendar.google.com/calendar/render?' + params.toString();
+
+  /* ---------- reveal on scroll ---------- */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold:0.16, rootMargin:'0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  /* ---------- the scroll-filling glass ---------- */
+  var glass = document.getElementById('glass');
+  var wineRect = document.getElementById('wineRect');
+  var wineTop = document.getElementById('wineTop');
+  var TOP = 15, BOT = 99, SPAN = BOT - TOP; // bowl interior in svg units
+  var ph = innerHeight, pinW = 72, pinH = 128, pinPad = 16;
+
+  function recalc(){ ph = innerHeight; }
+  function frame(){
+    var sy = window.pageYOffset || document.documentElement.scrollTop;
+    var docH = document.documentElement.scrollHeight - innerHeight;
+
+    /* fill 0..1 across whole page */
+    var prog = docH > 0 ? sy / docH : 0;
+    if(prog<0) prog=0; if(prog>1) prog=1;
+    var fill = 0.05 + 0.95 * prog;
+    var y = BOT - SPAN * fill;
+    wineRect.setAttribute('y', y);
+    wineRect.setAttribute('height', 210 - y);
+    wineTop.setAttribute('cy', y);
+    wineTop.setAttribute('rx', (2 + fill * 30).toFixed(1));
+    wineTop.setAttribute('opacity', fill > 0.02 ? 0.7 : 0);
+    /* glow grows as it fills */
+    glass.style.filter = 'drop-shadow(0 0 ' + (6 + fill*16) + 'px rgba(122,31,43,' + (0.12 + fill*0.4) + '))';
+
+    /* hero -> pinned transition */
+    var t = Math.min(1, sy / (ph * 0.82)); // 0 at top, 1 once hero scrolled
+    var pinCx = innerWidth - pinPad - pinW/2;
+    var pinCy = pinPad + pinH/2;
+    var heroCx = innerWidth/2;
+    var heroCy = ph * 0.47;
+    var maxByH = (ph * 0.52) / pinH;
+    var maxByW = (innerWidth * 0.74) / pinW;
+    var heroScale = Math.min(maxByH, maxByW, 3.4);
+    if(heroScale < 1) heroScale = 1;
+    var k = 1 - t;
+    var tx = (heroCx - pinCx) * k;
+    var ty = (heroCy - pinCy) * k;
+    var sc = 1 + (heroScale - 1) * k;
+    glass.style.transform = 'translate(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px) scale(' + sc.toFixed(3) + ')';
+    glass.style.opacity = (0.62 + 0.38 * t).toFixed(3); // softer behind hero text, full once pinned
+  }
+  var ticking = false;
+  function onScroll(){ if(!ticking){ requestAnimationFrame(function(){ frame(); ticking=false; }); ticking=true; } }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', function(){ recalc(); frame(); });
+  recalc(); frame();
+
+  /* ---------- background music ---------- */
+  var audio = document.getElementById('audio');
+  var btn = document.getElementById('music');
+  audio.volume = 0;
+  var fadeTimer = null, wanted = false;
+  var muteByChoice = localStorage.getItem('ea-music') === 'off';
+
+  function fadeTo(target, done){
+    clearInterval(fadeTimer);
+    fadeTimer = setInterval(function(){
+      var v = audio.volume;
+      var step = 0.04;
+      if(Math.abs(v - target) <= step){ audio.volume = target; clearInterval(fadeTimer); if(done) done(); return; }
+      audio.volume = v < target ? v + step : v - step;
+    }, 45);
+  }
+  function play(){
+    wanted = true; btn.classList.remove('hint');
+    audio.play().then(function(){
+      btn.classList.add('playing'); fadeTo(0.6);
+    }).catch(function(){ /* no file yet or blocked */ btn.classList.add('playing'); });
+  }
+  function pause(){
+    wanted = false;
+    fadeTo(0, function(){ audio.pause(); });
+    btn.classList.remove('playing');
+  }
+  btn.addEventListener('click', function(){
+    if(wanted){ pause(); localStorage.setItem('ea-music','off'); }
+    else { play(); localStorage.setItem('ea-music','on'); }
+  });
+  /* start softly on the first interaction, unless user previously muted */
+  function firstGesture(){
+    window.removeEventListener('scroll', firstGesture);
+    window.removeEventListener('touchstart', firstGesture);
+    window.removeEventListener('click', firstGesture);
+    if(!muteByChoice && !wanted) play();
+  }
+  if(!muteByChoice){
+    window.addEventListener('scroll', firstGesture, {passive:true, once:false});
+    window.addEventListener('touchstart', firstGesture, {passive:true});
+    window.addEventListener('click', firstGesture);
+  } else {
+    btn.classList.remove('hint');
+  }
+})();
+</script>
+</body>
+</html>
